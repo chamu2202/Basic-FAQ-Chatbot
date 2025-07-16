@@ -361,6 +361,7 @@ const ChatBox = () => {
                 <div key={idx} className="text-xs mb-1">
                   [{msg.timestamp}] <b>{msg.sender || "bot"}:</b> {msg.text} {msg.reaction && <>{msg.reaction}</>}
                 </div>
+                
               ))
             )}
           </div>
