@@ -91,8 +91,21 @@ const ChatBox = () => {
 
       if (!isExistingUser) {
         const userMessage = { sender: name, text: name, timestamp: new Date().toLocaleTimeString(), reaction: null };
-        const botConfirm = { sender: "bot", text: `Your name is ${name}`, timestamp: new Date().toLocaleTimeString(), reaction: null };
-        const botWelcome = { sender: "bot", text: `Nice to meet you, ${name}! How can I help you today?`, timestamp: new Date().toLocaleTimeString(), reaction: null };
+      const botConfirm = {
+          sender: "bot",
+          text: `Your name is ${name}`,
+          forUser: name,
+          timestamp: new Date().toLocaleTimeString(),
+          reaction: null
+      };
+      const botWelcome = {
+          sender: "bot",
+          text: `Nice to meet you, ${name}! How can I help you today?`,
+          forUser: name,
+          timestamp: new Date().toLocaleTimeString(),
+          reaction: null
+      };
+
         userMessages = [userMessage, botConfirm, botWelcome];
         updatedHistory = [...updatedHistory, ...userMessages];
       } else {
@@ -130,7 +143,12 @@ const ChatBox = () => {
       const matched = faqPatterns.find(item => item.patterns.some(pattern => lower.includes(pattern)));
       const botText = matched ? matched.response : fallbackResponse;
 
-      const botMsg = { sender: "bot", text: botText, timestamp: new Date().toLocaleTimeString(), reaction: null };
+      const botMsg = {   sender: "bot",
+      text: botText,
+      forUser: username,
+      timestamp: new Date().toLocaleTimeString(),
+      reaction: null
+};
       const updatedMessages = [...currentMessages, botMsg];
       const updatedHistory = [...currentHistory, botMsg];
 
@@ -149,6 +167,28 @@ const ChatBox = () => {
     setMessages([]);
     localStorage.setItem("chatMessages", JSON.stringify([]));
   };
+
+  const AddNewUser = () => {
+     setUsername("");
+              setWaitingForName(true);
+              setMessages([]);
+              localStorage.removeItem("username");
+              localStorage.setItem("chatMessages", JSON.stringify([]));
+
+              const welcome = {
+                sender: "bot",
+                text: "Hi! What’s your name?",
+                timestamp: new Date().toLocaleTimeString(),
+                reaction: null
+              };
+
+              const updatedHistory = [...chatHistory, welcome];
+              setChatHistory(updatedHistory);
+              localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+
+              setMessages([welcome]);
+              localStorage.setItem("chatMessages", JSON.stringify([welcome]));
+  }
 
   const toggleTheme = () => setDarkMode(prev => !prev);
 
@@ -181,6 +221,46 @@ const ChatBox = () => {
     }
   };
 
+  const handleUserSelection = (name) => {
+  if (!name) return;
+
+  const isExistingUser = allUsers.includes(name);
+
+  if (isExistingUser) {
+    const userMsgs = chatHistory.filter(
+      msg => msg.sender === name || msg.forUser === name
+    );
+    setMessages(userMsgs);
+    setUsername(name);
+    setWaitingForName(false);
+    localStorage.setItem("username", name);
+    localStorage.setItem("chatMessages", JSON.stringify(userMsgs));
+  } else {
+    // Simulate "New User" button logic
+    setUsername("");
+    setWaitingForName(true);
+    setMessages([]);
+    localStorage.removeItem("username");
+    localStorage.setItem("chatMessages", JSON.stringify([]));
+
+    const welcome = {
+      sender: "bot",
+      text: "Hi! What’s your name?",
+      timestamp: new Date().toLocaleTimeString(),
+      reaction: null
+    };
+
+    const updatedHistory = [...chatHistory, welcome];
+    setChatHistory(updatedHistory);
+    localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+    setMessages([welcome]);
+    localStorage.setItem("chatMessages", JSON.stringify([welcome]));
+
+    botSound.play();
+  }
+};
+
+
   return (
     <div className="flex max-w-4xl mx-auto p-4">
       {/* Sidebar */}
@@ -190,6 +270,11 @@ const ChatBox = () => {
           className="w-full border px-1 py-0.5 rounded text-xs text-black mb-2"
           value={selectedUser}
           onChange={(e) => setSelectedUser(e.target.value)}
+            onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            handleUserSelection(selectedUser.trim());
+          }
+        }}
           placeholder="Type existing user name..."
         />
         {selectedUser.trim() && allUsers.includes(selectedUser.trim()) ? (
@@ -220,25 +305,7 @@ const ChatBox = () => {
           </button>
           <button
             onClick={() => {
-              setUsername("");
-              setWaitingForName(true);
-              setMessages([]);
-              localStorage.removeItem("username");
-              localStorage.setItem("chatMessages", JSON.stringify([]));
-
-              const welcome = {
-                sender: "bot",
-                text: "Hi! What’s your name?",
-                timestamp: new Date().toLocaleTimeString(),
-                reaction: null
-              };
-
-              const updatedHistory = [...chatHistory, welcome];
-              setChatHistory(updatedHistory);
-              localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
-
-              setMessages([welcome]);
-              localStorage.setItem("chatMessages", JSON.stringify([welcome]));
+             AddNewUser();
             }}
             className="text-xs bg-red-500 text-white px-2 py-1 rounded"
           >
